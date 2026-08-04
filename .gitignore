@@ -1,0 +1,35 @@
+# Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+.classpath
+.project
+.settings/
+*.iml
+.idea/
+
+# Node / npm
+node_modules/
+npm-debug.log
+package-lock.json
+yarn.lock
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Secrets / local overrides
+.env
+.env.local
+secrets.yaml
+kubeconfig*.yaml

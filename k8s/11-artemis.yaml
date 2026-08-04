@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: artemis
+  namespace: converged-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: artemis
+  template:
+    metadata:
+      labels:
+        app: artemis
+    spec:
+      containers:
+        - name: artemis
+          image: apache/activemq-artemis:2.31.2-alpine
+          env:
+            - name: ARTEMIS_USER
+              value: admin
+            - name: ARTEMIS_PASSWORD
+              value: admin
+            # Allow the demo queue to be auto-created on first send.
+            - name: ANONYMOUS_LOGIN
+              value: "false"
+          ports:
+            - containerPort: 61616   # core/JMS
+            - containerPort: 8161    # web console (queue depth visualization)
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "384Mi"
+            limits:
+              memory: "700Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: artemis
+  namespace: converged-demo
+spec:
+  selector:
+    app: artemis
+  ports:
+    - name: core
+      port: 61616
+      targetPort: 61616
+    - name: console
+      port: 8161
+      targetPort: 8161

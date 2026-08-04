@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ShopFast — Checkout</title>
+    <link rel="stylesheet" href="/styles.css"/>
+    <!-- eG Enterprise Real User Monitoring -->
+    <script src='https://172.31.43.141:7077/rumcollector/egrum.js?srn=2147e5e7-5649-4ed5-a57b-d05f915076a4-1785759694810' async> </script>
+    <script src="/session.js"></script>
+</head>
+<body>
+<div id="bar" class="topbar">⏳ A heavy payment SDK is freezing the page for ~10s. Click “Pay $159.00” NOW — the delay before it responds is the First Input Delay (FID).</div>
+
+<div class="nav"><div class="nav-in">
+    <a class="brand" href="/index">Shop<span>Fast</span></a>
+    <a class="link" href="/index">Home</a>
+    <div class="spacer"></div>
+    <span class="user">👤&nbsp;<span id="rumUser" data-rum-user=""></span></span>
+    <a class="link" href="#" onclick="egLogout();return false;">Logout</a>
+    <a class="cart-pill" href="/cart">🛒 Cart (2)</a>
+</div></div>
+
+<div class="wrap" style="max-width:720px">
+    <h1 class="page">Checkout</h1>
+
+    <div class="card" style="margin-bottom:16px">
+        <h3>Order summary</h3>
+        <div class="rowline"><span>Aurora Noise-Cancelling Headphones</span><span>$129.00</span></div>
+        <div class="rowline"><span>PowerLine USB-C Charger 65W</span><span>$24.00</span></div>
+        <div class="rowline"><span>Shipping</span><span>$6.00</span></div>
+        <div class="rowline total"><span>Total</span><span>$159.00</span></div>
+    </div>
+
+    <div class="card">
+        <h3>Payment</h3>
+        <p class="muted">Card ending in •••• 4242</p>
+        <button id="payBtn" class="btn" onclick="placeOrder()">Pay $159.00</button>
+        <div id="status" class="muted" style="margin-top:12px;min-height:20px"></div>
+    </div>
+</div>
+
+<div id="frozen" class="overlay">Submitting your order… please don’t close this page</div>
+
+<script>
+    function block(ms){ var end = Date.now() + ms; while (Date.now() < end) {} }
+
+    // Painfully slow "payment/fraud SDK" init. Lower this to reduce the freeze.
+    var FID_BLOCK_MS = 10000;
+
+    // The SDK blocks the main thread on load. A real user who clicks Pay during
+    // this window feels the delay, and that first-input latency is the FID story.
+    window.addEventListener('load', function(){
+        document.getElementById('bar').classList.add('show');
+        setTimeout(function(){
+            block(FID_BLOCK_MS);
+            document.getElementById('bar').classList.remove('show');
+        }, 350);
+    });
+
+    var clicks = 0;
+    function placeOrder(){
+        var btn = document.getElementById('payBtn');
+        clicks++;
+        if (btn.disabled){ document.getElementById('status').textContent = 'Still working… (click #' + clicks + ')'; return; }
+        btn.disabled = true; btn.textContent = 'Processing…';
+        document.getElementById('frozen').classList.add('show');
+        document.getElementById('status').textContent = 'Contacting payment…';
+        var t0 = performance.now();
+
+        // Slow /placeOrder Ajax -> storefront -> order-service Checkout business
+        // transaction (slow method + SQL + 3rd-party exit call + MQ). Backend is
+        // tuned so this Ajax takes > 4000 ms.
+        fetch('/api/placeOrder', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items:['SKU-HEADPH-01','SKU-CHRG-USBC'], amount:159.00, currency:'USD' })
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            var ms = Math.round(performance.now() - t0);
+            location.href = '/confirmation?order=' + encodeURIComponent(data.orderId || '') + '&ms=' + ms;
+        })
+        .catch(function(){
+            document.getElementById('frozen').classList.remove('show');
+            btn.disabled = false; btn.textContent = 'Pay $159.00';
+            document.getElementById('status').textContent = 'Something went wrong. Please try again.';
+        });
+    }
+</script>
+</body>
+</html>

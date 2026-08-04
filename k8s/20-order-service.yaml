@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: converged-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: converged-demo/order-service:1.0.0
+          imagePullPolicy: IfNotPresent   # image is built directly into minikube
+          ports:
+            - containerPort: 8081
+          env:
+            - name: DB_URL
+              value: "jdbc:mysql://mysql:3306/shopdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+            - name: DB_USER
+              value: shop
+            - name: DB_PASSWORD
+              value: shoppass
+            - name: ARTEMIS_URL
+              value: "tcp://artemis:61616"
+            - name: PAYMENT_GATEWAY_URL
+              value: "http://payment-gateway:8080/delay/2"
+            # Fault-injection knobs — tune the demo live via kubectl set env.
+            # Sum makes the checkout Ajax ~10 s (6000 + 2000 + ~2000).
+            - name: PRICING_DELAY_MS
+              value: "6000"
+            - name: SQL_SLEEP_SECONDS
+              value: "2"
+          resources:
+            requests:
+              cpu: "150m"
+              memory: "320Mi"
+            limits:
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: converged-demo
+spec:
+  selector:
+    app: order-service
+  ports:
+    - port: 8081
+      targetPort: 8081

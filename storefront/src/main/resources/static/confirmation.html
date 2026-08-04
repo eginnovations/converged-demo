@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ShopFast — Order confirmed</title>
+    <link rel="stylesheet" href="/styles.css"/>
+    <!-- eG Enterprise Real User Monitoring -->
+    <script src='https://172.31.43.141:7077/rumcollector/egrum.js?srn=2147e5e7-5649-4ed5-a57b-d05f915076a4-1785759694810' async> </script>
+    <script src="/session.js"></script>
+</head>
+<body>
+<div class="nav"><div class="nav-in">
+    <a class="brand" href="/index">Shop<span>Fast</span></a>
+    <a class="link" href="/index">Home</a>
+    <div class="spacer"></div>
+    <span class="user">👤&nbsp;<span id="rumUser" data-rum-user=""></span></span>
+    <a class="link" href="#" onclick="egLogout();return false;">Logout</a>
+    <a class="cart-pill" href="/index">🛒 Cart (0)</a>
+</div></div>
+
+<div class="wrap" style="max-width:640px">
+    <div class="card" style="text-align:center">
+        <div style="font-size:44px">✅</div>
+        <h1 class="page" style="margin-top:8px">Thank you! Your order is confirmed.</h1>
+        <p class="muted">Order number: <b id="order">—</b></p>
+        <p class="muted" id="timing"></p>
+        <p>A confirmation email is on its way. This page is fast and clean — a good
+           healthy baseline to compare against the slow pages in eG RUM.</p>
+        <a class="btn blue" href="/index">Continue shopping</a>
+    </div>
+</div>
+
+<script>
+    var q = new URLSearchParams(location.search);
+    document.getElementById('order').textContent = q.get('order') || 'ORD-DEMO';
+    var ms = q.get('ms');
+    if (ms){ document.getElementById('timing').textContent =
+        'Checkout request completed in ' + ms + ' ms (the slow /placeOrder Ajax you saw in RUM).'; }
+</script>
+</body>
+</html>

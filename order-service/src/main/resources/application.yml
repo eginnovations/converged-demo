@@ -1,0 +1,48 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: order-service
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://mysql:3306/shopdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USER:shop}
+    password: ${DB_PASSWORD:shoppass}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      # Small pool so a slow SQL query visibly holds a connection (DB Visibility).
+      maximum-pool-size: 5
+      connection-timeout: 10000
+
+  sql:
+    init:
+      mode: always          # runs schema.sql at startup to create the orders table
+      continue-on-error: true
+
+  # ActiveMQ Artemis connection for the message-queue scenario.
+  artemis:
+    mode: native
+    broker-url: ${ARTEMIS_URL:tcp://artemis:61616}
+    user: ${ARTEMIS_USER:admin}
+    password: ${ARTEMIS_PASSWORD:admin}
+
+# Third-party payment gateway (mock) endpoint.
+payment:
+  gateway:
+    url: ${PAYMENT_GATEWAY_URL:http://payment-gateway:8080/delay/2}
+
+# Tunable fault injection for the demo (change without rebuilding).
+# Defaults sum so the checkout Ajax is ~10 s (painfully slow):
+#   pricing 6000 + SQL 2000 + payment gateway ~2000 + overhead  ~= 10 s
+demo:
+  pricing:
+    delayMs: ${PRICING_DELAY_MS:6000}     # slow-method duration
+  sql:
+    sleepSeconds: ${SQL_SLEEP_SECONDS:2}  # DB-side sleep in the slow SELECT
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

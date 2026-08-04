@@ -1,0 +1,9 @@
+{
+  "name": "rum-load",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser-based load generator that produces real eG RUM sessions",
+  "dependencies": {
+    "playwright": "^1.47.0"
+  }
+}

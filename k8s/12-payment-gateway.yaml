@@ -1,0 +1,40 @@
+# Mock 3rd-party payment gateway. httpbin exposes /delay/<seconds>, which the
+# order-service calls as its downstream exit call so eG shows a slow remote call.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-gateway
+  namespace: converged-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-gateway
+  template:
+    metadata:
+      labels:
+        app: payment-gateway
+    spec:
+      containers:
+        - name: httpbin
+          image: kennethreitz/httpbin:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-gateway
+  namespace: converged-demo
+spec:
+  selector:
+    app: payment-gateway
+  ports:
+    - port: 8080
+      targetPort: 80

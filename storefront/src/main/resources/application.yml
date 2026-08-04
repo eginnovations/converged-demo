@@ -1,0 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: storefront
+
+# URL of the order-service tier. Overridden by the Kubernetes Service DNS name.
+order:
+  service:
+    url: ${ORDER_SERVICE_URL:http://order-service:8081}
+
+# Catalog API delays (ms) that drive the browser Core Web Vitals scenarios.
+catalog:
+  productsDelayMs: ${CATALOG_PRODUCTS_DELAY_MS:10000}  # Home page LCP (~10 s, painfully slow)
+  productDelayMs:  ${CATALOG_PRODUCT_DELAY_MS:1200}
+  reviewsDelayMs:  ${CATALOG_REVIEWS_DELAY_MS:5000}    # Product page CLS shift #1 (~5 s)
+  relatedDelayMs:  ${CATALOG_RELATED_DELAY_MS:10000}   # Product page CLS shift #2 (~10 s)
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

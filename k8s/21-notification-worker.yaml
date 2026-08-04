@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-worker
+  namespace: converged-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-worker
+  template:
+    metadata:
+      labels:
+        app: notification-worker
+    spec:
+      containers:
+        - name: notification-worker
+          image: converged-demo/notification-worker:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+          env:
+            - name: ARTEMIS_URL
+              value: "tcp://artemis:61616"
+            # Per-message processing time. Higher = queue backs up faster.
+            - name: CONSUMER_PROCESSING_MS
+              value: "4000"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              memory: "400Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-worker
+  namespace: converged-demo
+spec:
+  selector:
+    app: notification-worker
+  ports:
+    - port: 8082
+      targetPort: 8082

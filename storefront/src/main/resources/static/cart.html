@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ShopFast — Cart</title>
+    <link rel="stylesheet" href="/styles.css"/>
+    <!-- eG Enterprise Real User Monitoring -->
+    <script src='https://172.31.43.141:7077/rumcollector/egrum.js?srn=2147e5e7-5649-4ed5-a57b-d05f915076a4-1785759694810' async> </script>
+    <script src="/session.js"></script>
+</head>
+<body>
+<div class="nav"><div class="nav-in">
+    <a class="brand" href="/index">Shop<span>Fast</span></a>
+    <a class="link" href="/index">Home</a>
+    <div class="spacer"></div>
+    <span class="user">👤&nbsp;<span id="rumUser" data-rum-user=""></span></span>
+    <a class="link" href="#" onclick="egLogout();return false;">Logout</a>
+    <a class="cart-pill" href="/cart">🛒 Cart</a>
+</div></div>
+
+<div class="wrap">
+    <h1 class="page">Your cart</h1>
+    <div class="card">
+        <div id="items"></div>
+        <div class="rowline"><span>Subtotal</span><span id="subtotal"></span></div>
+        <div class="rowline"><span>Estimated tax</span><span id="tax"></span></div>
+        <div class="rowline total"><span>Total</span><span id="total"></span></div>
+        <div style="margin-top:16px;text-align:right">
+            <a class="btn blue" href="/checkout">Proceed to checkout</a>
+        </div>
+    </div>
+    <p class="muted" id="hint" style="margin-top:10px"></p>
+</div>
+
+<script>
+    var cart = [
+        { name: "Aurora Noise-Cancelling Headphones", price: 129.00, qty: 1 },
+        { name: "PowerLine USB-C Charger 65W",        price: 24.00,  qty: 1 }
+    ];
+    function money(n){ return "$" + Number(n).toFixed(2); }
+
+    function render(){
+        document.getElementById('items').innerHTML = cart.map(function(it, i){
+            return '<div class="rowline"><div>' + it.name + '<div class="muted">' + money(it.price) + ' each</div></div>' +
+                '<div class="qty"><button onclick="changeQty(' + i + ',-1)">−</button>' +
+                '<span id="q' + i + '">' + it.qty + '</span>' +
+                '<button onclick="changeQty(' + i + ',1)">+</button></div></div>';
+        }).join('');
+        var sub = cart.reduce(function(s, it){ return s + it.price * it.qty; }, 0);
+        var tax = sub * 0.08;
+        document.getElementById('subtotal').textContent = money(sub);
+        document.getElementById('tax').textContent = money(tax);
+        document.getElementById('total').textContent = money(sub + tax);
+    }
+
+    // Painfully slow interaction. Lower this to make clicks less punishing.
+    var INP_BLOCK_MS = 10000;
+
+    function changeQty(i, d){
+        cart[i].qty = Math.max(1, cart[i].qty + d);
+        // Expensive synchronous "promotions + tax + shipping" recomputation that
+        // blocks the main thread before the next paint -> poor INP on every click.
+        var end = Date.now() + INP_BLOCK_MS;
+        while (Date.now() < end) { /* busy recompute */ }
+        render();
+        document.getElementById('hint').innerHTML =
+            '⚠ That click froze the UI for ~' + Math.round(INP_BLOCK_MS/1000) +
+            's before it repainted. <b>That latency is INP</b> (Interaction to Next Paint) — poor.';
+    }
+
+    render();
+    document.getElementById('hint').innerHTML =
+        'ℹ Click the <b>+</b> or <b>−</b> buttons: each click runs a ~' +
+        Math.round(INP_BLOCK_MS/1000) + 's blocking price recalculation on the main thread → <b>poor INP</b>.';
+</script>
+</body>
+</html>

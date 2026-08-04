@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init
+  namespace: converged-demo
+data:
+  # Enable the slow query log so eG Database Visibility has slow queries to show.
+  slow.cnf: |
+    [mysqld]
+    slow_query_log = 1
+    long_query_time = 0.5
+    log_output = TABLE
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: converged-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          args: ["--default-authentication-plugin=mysql_native_password"]
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: rootpass
+            - name: MYSQL_DATABASE
+              value: shopdb
+            - name: MYSQL_USER
+              value: shop
+            - name: MYSQL_PASSWORD
+              value: shoppass
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: init
+              mountPath: /etc/mysql/conf.d
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "384Mi"
+            limits:
+              memory: "700Mi"
+      volumes:
+        - name: init
+          configMap:
+            name: mysql-init
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: converged-demo
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306

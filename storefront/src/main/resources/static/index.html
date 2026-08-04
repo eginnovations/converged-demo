@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ShopFast — Home</title>
+    <link rel="stylesheet" href="/styles.css"/>
+    <!-- eG Enterprise Real User Monitoring -->
+    <script src='https://172.31.43.141:7077/rumcollector/egrum.js?srn=2147e5e7-5649-4ed5-a57b-d05f915076a4-1785759694810' async> </script>
+    <script src="/session.js"></script>
+</head>
+<body>
+<div class="nav"><div class="nav-in">
+    <a class="brand" href="/index">Shop<span>Fast</span></a>
+    <a class="link" href="/index">Home</a>
+    <a class="link" href="/product?id=h1">Deals</a>
+    <div class="spacer"></div>
+    <span class="user">👤&nbsp;<span id="rumUser" data-rum-user=""></span></span>
+    <a class="link" href="#" onclick="egLogout();return false;">Logout</a>
+    <a class="cart-pill" href="/cart">🛒 Cart (2)</a>
+</div></div>
+
+<div class="wrap">
+    <!-- HERO: the largest contentful element. It stays a skeleton until the slow
+         /api/products call returns (~10s), so LCP is painfully high. -->
+    <div id="hero" class="hero">
+        <div class="sk" style="width:100%;height:360px;display:flex;align-items:center;
+             justify-content:center;text-align:center;padding:24px;color:#6b7885;font-size:16px;line-height:1.5">
+            ⏳ Waiting ~10&nbsp;seconds on the catalog API (/api/products).<br>
+            The big hero image below is the <b>LCP</b> element — the page cannot finish
+            painting until it arrives. <b>This is what a slow LCP looks like.</b>
+        </div>
+    </div>
+
+    <h1 class="page">Trending now</h1>
+    <div id="grid" class="grid"></div>
+</div>
+
+<script>
+    function imgSvg(color, label, w, h){
+        var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='"+w+"' height='"+h+"'>"+
+            "<rect width='100%' height='100%' fill='"+color+"'/>"+
+            "<text x='"+Math.round(w*0.05)+"' y='"+Math.round(h*0.55)+"' font-size='"+Math.round(h*0.10)+
+            "' fill='white' font-family='sans-serif'>"+label+"</text></svg>";
+        return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+    }
+    function money(n){ return "$" + Number(n).toFixed(2); }
+
+    // Self-instructing hero: the SVG itself explains that it is the LCP element.
+    function heroSvg(color){
+        var lines = [
+            'HUGE HERO IMAGE  (1000 x 360)',
+            'I am the Largest Contentful Paint (LCP).',
+            'I took ~10 seconds to load because the',
+            'catalog service was slow  ->  poor LCP.'
+        ];
+        var t = lines.map(function(l, i){
+            return "<text x='45' y='" + (110 + i * 56) + "' font-size='31' fill='white' " +
+                   "font-family='sans-serif' font-weight='bold'>" + l + "</text>";
+        }).join('');
+        var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='1000' height='360'>" +
+            "<rect width='100%' height='100%' fill='" + color + "'/>" + t + "</svg>";
+        return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+    }
+
+    // Render skeleton tiles immediately so the page has structure while it waits.
+    var grid = document.getElementById('grid');
+    grid.innerHTML = Array(6).fill(
+        '<div class="tile"><div class="sk sk-img"></div>' +
+        '<div class="body"><div class="sk sk-line" style="width:80%"></div>' +
+        '<div class="sk sk-line" style="width:40%"></div></div></div>').join('');
+
+    // Slow catalog call -> late LCP. Real users just see a slow home page.
+    fetch('/api/products').then(function(r){ return r.json(); }).then(function(products){
+        var featured = products[0];
+        document.getElementById('hero').innerHTML =
+            '<a href="/product?id=' + featured.id + '"><img alt="LCP hero element" src="' +
+            heroSvg(featured.color) + '"/></a>' +
+            '<div class="muted" style="margin-top:6px;font-size:13px">☝ LCP element — appeared after ~10s ' +
+            '(CATALOG_PRODUCTS_DELAY_MS). This late paint is the poor Largest Contentful Paint.</div>';
+
+        grid.innerHTML = products.map(function(p){
+            return '<a class="tile" href="/product?id=' + p.id + '">' +
+                '<img alt="' + p.name + '" src="' + imgSvg(p.color, p.name.split(" ")[0], 600, 450) + '"/>' +
+                '<div class="body"><div class="name">' + p.name + '</div>' +
+                '<div class="price">' + money(p.price) + '</div></div></a>';
+        }).join('');
+    });
+</script>
+</body>
+</html>

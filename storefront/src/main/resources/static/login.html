@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ShopFast — Sign in</title>
+    <link rel="stylesheet" href="/styles.css"/>
+    <!-- eG Enterprise Real User Monitoring -->
+    <script src='https://172.31.43.141:7077/rumcollector/egrum.js?srn=2147e5e7-5649-4ed5-a57b-d05f915076a4-1785759694810' async> </script>
+</head>
+<body>
+<div class="nav"><div class="nav-in">
+    <a class="brand" href="/login">Shop<span>Fast</span></a>
+    <div class="spacer"></div>
+</div></div>
+
+<div class="wrap" style="max-width:420px">
+    <div class="card">
+        <h1 class="page">Sign in</h1>
+        <p class="muted">Demo accounts, e.g. <b>alice.chen@shopfast.io</b> (any password).</p>
+        <label>Email</label>
+        <input id="username" class="inp" placeholder="you@shopfast.io" value="alice.chen@shopfast.io"/>
+        <label>Password</label>
+        <input id="password" class="inp" type="password" value="demo"/>
+        <button id="loginBtn" class="btn" style="margin-top:14px;width:100%" onclick="doLogin()">Sign in</button>
+        <div id="err" class="muted" style="color:#c0392b;margin-top:8px"></div>
+    </div>
+</div>
+
+<script>
+    function doLogin(){
+        var u = document.getElementById('username').value.trim();
+        if (!u){ document.getElementById('err').textContent = 'Please enter your email.'; return; }
+        try { localStorage.setItem('shopUser', u); } catch (e) {}
+        location.href = '/index';
+    }
+    document.addEventListener('keydown', function(e){ if (e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>
