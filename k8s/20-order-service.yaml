@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: converged-demo/order-service:1.0.0
-          imagePullPolicy: IfNotPresent   # image is built directly into minikube
+          image: redzice/converged-demo-order-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8081
           env:

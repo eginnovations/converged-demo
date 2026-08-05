@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
         - name: notification-worker
-          image: converged-demo/notification-worker:1.0.0
-          imagePullPolicy: IfNotPresent
+          image: redzice/converged-demo-notification-worker:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8082
           env:

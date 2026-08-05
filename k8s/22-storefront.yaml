@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
         - name: storefront
-          image: converged-demo/storefront:1.0.0
-          imagePullPolicy: IfNotPresent
+          image: redzice/converged-demo-storefront:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
             - containerPort: 8443
