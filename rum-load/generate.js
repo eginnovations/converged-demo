@@ -1,4 +1,5 @@
 /*
+ *
  * Browser-based RUM + APM load generator (multi-user, multi-browser).
  *
  * Each cycle:
