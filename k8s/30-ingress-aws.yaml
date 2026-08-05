@@ -19,6 +19,9 @@ spec:
     - port: 80
       targetPort: 8080
       protocol: TCP
+    - port: 443
+      targetPort: 8080
+      protocol: TCP
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -30,7 +33,8 @@ metadata:
     kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
     # Health check for the storefront service
     alb.ingress.kubernetes.io/healthcheck-path: /health
     alb.ingress.kubernetes.io/healthcheck-interval-seconds: '15'
@@ -38,8 +42,13 @@ metadata:
     alb.ingress.kubernetes.io/healthy-threshold-count: '2'
     alb.ingress.kubernetes.io/unhealthy-threshold-count: '2'
 spec:
+  tls:
+    - hosts:
+        - converged-demo.local
+      secretName: converged-demo-tls
   rules:
-    - http:
+    - host: converged-demo.local
+      http:
         paths:
           - path: /
             pathType: Prefix
