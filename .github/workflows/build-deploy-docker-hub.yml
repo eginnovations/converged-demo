@@ -1,0 +1,116 @@
+name: Build, Push to Docker Hub, and Deploy to EKS
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn clean package -q
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PAT }}
+
+      - name: Build and push storefront image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./storefront
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-storefront:${{ github.sha }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-storefront:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-storefront:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-storefront:buildcache,mode=max
+
+      - name: Build and push order-service image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./order-service
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-order-service:${{ github.sha }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-order-service:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-order-service:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-order-service:buildcache,mode=max
+
+      - name: Build and push notification-worker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./notification-worker
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-notification-worker:${{ github.sha }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-notification-worker:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-notification-worker:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-notification-worker:buildcache,mode=max
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
+
+      - name: Create namespace if not exists
+        run: kubectl create namespace converged-demo --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply K8s manifests (infra)
+        run: kubectl apply -f k8s/00-namespace.yaml -f k8s/10-mysql.yaml -f k8s/11-artemis.yaml -f k8s/12-payment-gateway.yaml
+
+      - name: Wait for infra to be ready
+        run: |
+          kubectl wait --for=condition=ready pod -l app=mysql -n converged-demo --timeout=300s || true
+          kubectl wait --for=condition=ready pod -l app=artemis -n converged-demo --timeout=300s || true
+
+      - name: Update app images
+        run: |
+          kubectl set image deployment/storefront storefront=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-storefront:${{ github.sha }} -n converged-demo --record
+          kubectl set image deployment/order-service order-service=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-order-service:${{ github.sha }} -n converged-demo --record
+          kubectl set image deployment/notification-worker notification-worker=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-notification-worker:${{ github.sha }} -n converged-demo --record
+
+      - name: Apply app manifests
+        run: kubectl apply -f k8s/20-order-service.yaml -f k8s/21-notification-worker.yaml -f k8s/22-storefront.yaml -n converged-demo
+
+      - name: Apply Ingress (AWS ALB)
+        run: kubectl apply -f k8s/30-ingress-aws.yaml
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/storefront -n converged-demo --timeout=300s || true
+          kubectl rollout status deployment/order-service -n converged-demo --timeout=300s || true
+          kubectl rollout status deployment/notification-worker -n converged-demo --timeout=300s || true
+
+      - name: Get ALB endpoint
+        run: |
+          echo "=== Deployment Complete ==="
+          echo "Waiting for ALB (30s)..."
+          sleep 30
+          ALB_DNS=$(kubectl get ingress converged-demo -n converged-demo -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "provisioning...")
+          echo "✓ App URL: http://$ALB_DNS"
+          echo ""
+          echo "Pods:"
+          kubectl get pods -n converged-demo
