@@ -80,14 +80,14 @@ jobs:
           kubectl wait --for=condition=ready pod -l app=mysql -n converged-demo --timeout=300s || true
           kubectl wait --for=condition=ready pod -l app=artemis -n converged-demo --timeout=300s || true
 
-      - name: Update app images
-        run: |
-          kubectl set image deployment/storefront storefront=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-storefront:${{ github.sha }} -n converged-demo --record
-          kubectl set image deployment/order-service order-service=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-order-service:${{ github.sha }} -n converged-demo --record
-          kubectl set image deployment/notification-worker notification-worker=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-notification-worker:${{ github.sha }} -n converged-demo --record
-
       - name: Apply app manifests
         run: kubectl apply -f k8s/20-order-service.yaml -f k8s/21-notification-worker.yaml -f k8s/22-storefront.yaml -n converged-demo
+
+      - name: Update app images
+        run: |
+          kubectl set image deployment/storefront storefront=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-storefront:${{ github.sha }} -n converged-demo
+          kubectl set image deployment/order-service order-service=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-order-service:${{ github.sha }} -n converged-demo
+          kubectl set image deployment/notification-worker notification-worker=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-notification-worker:${{ github.sha }} -n converged-demo
 
       - name: Apply Ingress (AWS ALB)
         run: kubectl apply -f k8s/30-ingress-aws.yaml
