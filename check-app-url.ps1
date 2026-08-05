@@ -10,7 +10,7 @@ $ErrorActionPreference = "Stop"
 Write-Host "=== Application URL ===" -ForegroundColor Cyan
 Write-Host ""
 
-$albDns = kubectl get ingress converged-demo -n converged-demo -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null
+$albDns = kubectl get ingress converged-demo -n converged-demo -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>$null
 
 if ($albDns) {
     Write-Host "App is ready at:" -ForegroundColor Green

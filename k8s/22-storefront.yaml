@@ -19,9 +19,8 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+            - containerPort: 8443
           env:
-            - name: ORDER_SERVICE_URL
-              value: "http://order-service:8081"
             # Core Web Vitals timings (tune live via kubectl set env).
             - name: CATALOG_PRODUCTS_DELAY_MS   # Home LCP
               value: "10000"
@@ -29,12 +28,20 @@ spec:
               value: "5000"
             - name: CATALOG_RELATED_DELAY_MS    # Product CLS shift #2
               value: "10000"
+          volumeMounts:
+            - name: tls-keystore
+              mountPath: /etc/tls
+              readOnly: true
           resources:
             requests:
               cpu: "100m"
               memory: "256Mi"
             limits:
               memory: "400Mi"
+      volumes:
+        - name: tls-keystore
+          secret:
+            secretName: storefront-tls
 ---
 apiVersion: v1
 kind: Service
@@ -42,11 +49,15 @@ metadata:
   name: storefront
   namespace: converged-demo
 spec:
-  # NodePort so you can open the checkout page from your browser via minikube.
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: storefront
   ports:
-    - port: 8080
+    - name: http
+      port: 80
       targetPort: 8080
-      nodePort: 30080
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: 8443
+      protocol: TCP

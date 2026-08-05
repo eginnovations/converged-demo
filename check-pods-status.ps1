@@ -15,7 +15,7 @@ kubectl get pods -n converged-demo -o wide
 Write-Host ""
 
 Write-Host "Pod Details (with events):" -ForegroundColor Yellow
-kubectl describe pods -n converged-demo 2>/dev/null | Select-String -Pattern "Name:|Status:|Restart|Events" -Context 1
+kubectl describe pods -n converged-demo 2>$null | Select-String -Pattern "Name:|Status:|Restart|Events" -Context 1
 Write-Host ""
 
 Write-Host "Usage:" -ForegroundColor Green

@@ -27,7 +27,7 @@ Write-Host ""
 
 # Get app URL
 Write-Host "App URL:" -ForegroundColor Green
-$albDns = kubectl get ingress converged-demo -n converged-demo -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null
+$albDns = kubectl get ingress converged-demo -n converged-demo -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>$null
 if ($albDns) {
     Write-Host "  http://$albDns" -ForegroundColor Green
     Write-Host ""
