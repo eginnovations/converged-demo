@@ -39,8 +39,6 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-storefront:${{ github.sha }}
             ${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-storefront:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-storefront:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-storefront:buildcache,mode=max
 
       - name: Build and push order-service image
         uses: docker/build-push-action@v5
@@ -50,8 +48,6 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-order-service:${{ github.sha }}
             ${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-order-service:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-order-service:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-order-service:buildcache,mode=max
 
       - name: Build and push notification-worker image
         uses: docker/build-push-action@v5
@@ -61,8 +57,6 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-notification-worker:${{ github.sha }}
             ${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-notification-worker:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-notification-worker:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/converged-demo-notification-worker:buildcache,mode=max
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
