@@ -16,7 +16,7 @@ $ErrorActionPreference = "Stop"
 $CLUSTER_NAME = "converged-apm-demo"
 $REGION = "ap-southeast-1"
 $NAMESPACE = "converged-demo"
-$NODEGROUP = "default"
+$NODEGROUP = "demo-node-grp-new"
 
 function Show-Menu {
     Write-Host ""
